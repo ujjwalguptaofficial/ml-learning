@@ -1,0 +1,43 @@
+---
+name: color.mahal
+description:
+dateCreated: May 10, 2023
+---
+
+<html>
+<div :style="{background:color}" class="color ml-2" :class="{'color--selected':selected}" @click="selectColor(color)">
+</div>
+</html>
+
+<script>
+import { Component, prop, reactive } from "mahal";
+
+export default class extends Component {
+    @prop() color;
+    @reactive selected = false;
+
+    onInit() {
+        // setTimeout(()=>{
+        // console.log(this.color);
+        // },1000);
+    }
+
+    selectColor(color) {
+        this.selected = !this.selected;
+        this.emit("selected", this.color, this.selected);
+    }
+}
+</script>
+
+<style>
+.color {
+    width: 70px;
+    height: 70px;
+    margin-top: 10px;
+    cursor: pointer;
+}
+
+.color--selected {
+    border: 8px dotted;
+}
+</style>

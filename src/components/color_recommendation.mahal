@@ -1,0 +1,170 @@
+---
+name: color_recommendation.mahal
+description:
+dateCreated: May 10, 2023
+---
+
+<html>
+<div class="container is-flex is-flex-direction-column is-align-items-center mt-6">
+	<div class="is-flex" :for(colors in inputs)>
+		<!-- <h1 class="mr-4">Choose your favourite color:</h1>
+		<input type="color" :model(colorValue) /> -->
+		<div :for(color in colors) :style="{background:color.color}" class="input-color ml-2"
+			:class="{'input-color--selected':color.selected}" @click="selectColor(color)">
+		</div>
+	</div>
+	<div class="is-flex mt-4">
+		<button class="button is-primary is-large" @click="submit">I am done</button>
+	</div>
+	
+	<div class="is-flex mt-4">
+		<button class="button is-primary is-large" @click="train">
+			Ok, now recommend some
+		</button>
+	</div>
+	<div class="is-flex mt-4">
+		<div :for(color in results) :style="{background:color}" class="box ml-2">
+		</div>
+	</div>
+</div>
+</html>
+
+<script>
+import { Component, reactive } from "mahal";
+import { NeuralNetwork } from "brain.js";
+
+export default class extends Component {
+    colorValue = "#000000";
+    colorRecom = new NeuralNetwork({
+        // hiddenLayers: 3,
+        hiddenLayers: [3],
+        inputSize: 3,
+        outputSize: 1,
+    });
+
+    @reactive
+    results = [];
+
+    likedColors = [
+        // [123, 0, 12],
+        // [23, 1, 14],
+        // [25, 25, 140],
+        // [125, 225, 100],
+        // [105, 225, 200],
+        // [125, 235, 200],
+    ];
+
+    inputs = [];
+
+    selectColor(color) {
+        debugger;
+        color.selected = !color.selected;
+    }
+
+    onInit() {
+        window["app"] = this;
+
+        let maxCount = 105;
+        let inputs = [];
+        while (maxCount != 0) {
+            const generatedColor = this.generateNewColor();
+            inputs.push({
+                color: generatedColor,
+                selected: false,
+            });
+            maxCount--;
+            if (maxCount % 15 === 0) {
+                this.inputs.push(inputs);
+                inputs = [];
+            }
+        }
+        console.log("inputs", this.inputs);
+    }
+
+    getRGBFromHash(color) {
+        const r = parseInt(color.substr(1, 2), 16);
+        const g = parseInt(color.substr(3, 2), 16);
+        const b = parseInt(color.substr(5, 2), 16);
+        return [r, g, b];
+    }
+
+    submit() {
+        const rgb = this.getRGBFromHash(this.colorValue);
+        this.likedColors.push(rgb);
+    }
+
+    train() {
+        const datas = this.likedColors.map((item) => {
+            return {
+                input: [item[0] / 255, item[1] / 255, item[2] / 255],
+                output: [1],
+            };
+        });
+        const state = this.colorRecom.train(datas, {
+            iterations: 10000,
+        });
+        console.log("state", state);
+
+        let maxCount = 6;
+
+        while (maxCount != 0) {
+            const generatedColor = this.generateNewColor();
+            const rgb = this.getRGBFromHash(generatedColor);
+            const input = [rgb[0] / 255, rgb[1] / 255, rgb[2] / 255];
+            console.log("input", input);
+            const result = this.colorRecom.run(input);
+            // console.log(result);
+            if (result[0] > 0.9) {
+                maxCount--;
+                this.results.push(generatedColor);
+            } else {
+                console.log("found invalid color", generatedColor);
+            }
+        }
+    }
+
+    generateNewColor() {
+        const hexCharacters = [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+            "F",
+        ];
+
+        function getCharacter(index) {
+            return hexCharacters[index];
+        }
+        let hexColorRep = "#";
+
+        for (let index = 0; index < 6; index++) {
+            const randomPosition = Math.floor(
+                Math.random() * hexCharacters.length
+            );
+            hexColorRep += getCharacter(randomPosition);
+        }
+
+        return hexColorRep;
+    }
+}
+</script>
+
+<style>
+.input-color {
+    width: 70px;
+    height: 70px;
+    margin-top: 10px;
+    cursor: pointer;
+}
+</style>

@@ -1,0 +1,38 @@
+---
+name: color_row.mahal
+description:
+dateCreated: May 10, 2023
+---
+
+<html>
+<div class="is-flex">
+	<Color :for(_, color in colors) :color="color" @selected="selectColor">
+	</Color>
+</div>
+</html>
+
+<script>
+import { children, Component, prop } from "mahal";
+import Color from "@/components/color_recommendation/color.mahal";
+
+@children({
+    Color,
+})
+export default class extends Component {
+    @prop() colors;
+
+    onInit() {
+        setTimeout(() => {
+            console.log(this.colors);
+        }, 1000);
+    }
+
+    selectColor(color, selected) {
+        this.colors[color] = selected;
+        // this.emit("selected");
+    }
+}
+</script>
+
+<style>
+</style>

@@ -1,0 +1,146 @@
+---
+name: color_recommendation.mahal
+description:
+dateCreated: May 10, 2023
+---
+
+<html>
+<div class="container is-flex is-flex-direction-column is-align-items-center mt-6">
+	<div class="is-flex" :for(colors in inputs)>
+		<!-- <h1 class="mr-4">Choose your favourite color:</h1>
+		<input type="color" :model(colorValue) /> -->
+		<!-- <Color :for(selected, color in colors) :color="color" @selected="selectColor(colors,color,index)">
+		</Color> -->
+		<ColorRow :colors="colors" />
+	</div>
+	<div class=" is-flex mt-4">
+		<button class="button is-primary is-large" @click="train">I am done</button>
+	</div>
+	<div class="is-flex mt-4">
+		<div :for(color in results) :style="{background:color}" class="box ml-2">
+		</div>
+	</div>
+</div>
+</html>
+
+<script>
+import { children, Component, reactive } from "mahal";
+import { NeuralNetwork } from "brain.js";
+import ColorRow from "@/components/color_recommendation/color_row.mahal";
+
+@children({
+    ColorRow,
+})
+export default class extends Component {
+    colorRecom = new NeuralNetwork({
+        // hiddenLayers: 3,
+        hiddenLayers: [3],
+        inputSize: 3,
+        outputSize: 1,
+    });
+
+    @reactive
+    results = [];
+
+    inputs = [];
+
+    onInit() {
+        window["app"] = this;
+        let maxCount = 105;
+        let inputs = {};
+        while (maxCount != 0) {
+            const generatedColor = this.generateNewColor();
+            inputs[generatedColor] = false;
+            maxCount--;
+            if (maxCount % 15 === 0) {
+                this.inputs.push(inputs);
+                inputs = {};
+            }
+        }
+        console.log("inputs", this.inputs);
+    }
+
+    getRGBFromHash(color) {
+        const r = parseInt(color.substr(1, 2), 16);
+        const g = parseInt(color.substr(3, 2), 16);
+        const b = parseInt(color.substr(5, 2), 16);
+        return [r, g, b];
+    }
+
+    train() {
+        const likedColors = [];
+        this.inputs.forEach((colorRow) => {
+            for (const color in colorRow) {
+                if (colorRow[color]) {
+                    likedColors.push(color);
+                }
+            }
+        });
+        const datas = likedColors.map((likedColor) => {
+            const item = this.getRGBFromHash(likedColor);
+            return {
+                input: [item[0] / 255, item[1] / 255, item[2] / 255],
+                output: [1],
+            };
+        });
+        const state = this.colorRecom.train(datas, {
+            iterations: 10000,
+        });
+        console.log("state", state);
+
+        let maxCount = 6;
+
+        while (maxCount != 0) {
+            const generatedColor = this.generateNewColor();
+            const rgb = this.getRGBFromHash(generatedColor);
+            const input = [rgb[0] / 255, rgb[1] / 255, rgb[2] / 255];
+            console.log("input", input);
+            const result = this.colorRecom.run(input);
+            // console.log(result);
+            if (result[0] > 0.9) {
+                maxCount--;
+                this.results.push(generatedColor);
+            } else {
+                console.log("found invalid color", generatedColor);
+            }
+        }
+    }
+
+    generateNewColor() {
+        const hexCharacters = [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+            "F",
+        ];
+
+        function getCharacter(index) {
+            return hexCharacters[index];
+        }
+        let hexColorRep = "#";
+
+        for (let index = 0; index < 6; index++) {
+            const randomPosition = Math.floor(
+                Math.random() * hexCharacters.length
+            );
+            hexColorRep += getCharacter(randomPosition);
+        }
+
+        return hexColorRep;
+    }
+}
+</script>
+
+
