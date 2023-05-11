@@ -6,20 +6,26 @@ dateCreated: May 10, 2023
 
 <html>
 <div class="container is-flex is-flex-direction-column is-align-items-center mt-6">
-	<h1 class="title is-size-4 mt-0 mb-1">Select your favourite colors</h1>
-	<div class="is-flex" :for(colors in inputs)>
-		<!-- <h1 class="mr-4">Choose your favourite color:</h1>
-		<input type="color" :model(colorValue) /> -->
-		<!-- <Color :for(selected, color in colors) :color="color" @selected="selectColor(colors,color,index)">
-		</Color> -->
-		<ColorRow :colors="colors" />
+	<div :if(!isTrained) class="is-flex is-flex-direction-column is-align-items-center">
+		<h1 class="title is-size-4 mt-0 mb-1">Select your favourite colors</h1>
+		<div class="is-flex" :for(colors in inputs)>
+			<ColorRow :colors="colors" />
+		</div>
+		<div class="is-flex mt-4">
+			<button class="button is-primary is-large" @click="train">I am done</button>
+		</div>
 	</div>
-	<div class=" is-flex mt-4">
-		<button class="button is-primary is-large" @click="train">I am done</button>
-	</div>
-	<div class="is-flex mt-4">
-		<Color :for(color in results) :color="color">
-		</Color>
+	<div class="mt-4" :else>
+		<h1 class="title is-size-4">You have choosen</h1>
+		<div class="is-flex">
+			<Color :for(color in selectedColors) :color="color">
+			</Color>
+		</div>
+		<h1 class="title is-size-4 mt-4">Recommendations calculated</h1>
+		<div class="is-flex">
+			<Color :for(color in results) :color="color">
+			</Color>
+		</div>
 	</div>
 </div>
 </html>
@@ -45,7 +51,14 @@ export default class extends Component {
     @reactive
     results = [];
 
+    @reactive
     inputs = [];
+
+    @reactive
+    selectedColors = [];
+
+    @reactive
+    isTrained = false;
 
     onInit() {
         window["app"] = this;
@@ -89,6 +102,7 @@ export default class extends Component {
                     output: (() => {
                         if (colorRow[color]) {
                             selectedCount++;
+                            this.selectedColors.push(color);
                             return [1];
                         }
                         return [0];
@@ -104,22 +118,25 @@ export default class extends Component {
             iterations: 10000,
         });
         console.log("state", state);
-        if (state.error > 0.01) {
+        if (state.error > 0.02) {
             return alert(
                 "Could not run recommendation. Seems like there is no fixed pattern"
             );
         }
+        this.isTrained = true;
 
         const output = new Set();
-
+        const input = new Set(this.selectedColors);
         while (output.size < 6) {
             const generatedColor = this.generateNewColor();
-            const result = this.run(generatedColor);
-            // console.log(result);
-            if (result[0] > 0.95) {
-                output.add(generatedColor);
-            } else {
-                // console.log("found invalid color", generatedColor);
+            if (!input.has(generatedColor)) {
+                const result = this.run(generatedColor);
+                // console.log(result);
+                if (result[0] > 0.95) {
+                    output.add(generatedColor);
+                } else {
+                    // console.log("found invalid color", generatedColor);
+                }
             }
         }
         this.results = Array.from(output);
