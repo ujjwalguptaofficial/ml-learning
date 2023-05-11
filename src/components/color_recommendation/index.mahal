@@ -6,6 +6,7 @@ dateCreated: May 10, 2023
 
 <html>
 <div class="container is-flex is-flex-direction-column is-align-items-center mt-6">
+	<h1 class="title is-size-4 mt-0 mb-1">Select your favourite colors</h1>
 	<div class="is-flex" :for(colors in inputs)>
 		<!-- <h1 class="mr-4">Choose your favourite color:</h1>
 		<input type="color" :model(colorValue) /> -->
@@ -76,19 +77,27 @@ export default class extends Component {
     }
 
     train() {
+        let selectedCount = 0;
         const likedColors = [];
         this.inputs.forEach((colorRow) => {
             for (const color in colorRow) {
                 const item = this.getRGBFromHash(color);
-
-                // if () {
                 likedColors.push({
                     input: [item[0] / 255, item[1] / 255, item[2] / 255],
-                    output: [colorRow[color] ? 1 : 0],
+                    output: (() => {
+                        if (colorRow[color]) {
+                            selectedCount++;
+                            return [1];
+                        }
+                        return [0];
+                    })(),
                 });
-                // }
             }
         });
+        if (selectedCount < 5) {
+            alert("Atleast 5 colors needed");
+            return;
+        }
         // console.log("likedColors", likedColors);
         // const datas = likedColors.map((likedColor) => {
         //     const item = this.getRGBFromHash(likedColor);
@@ -108,7 +117,7 @@ export default class extends Component {
             const generatedColor = this.generateNewColor();
             const result = this.run(generatedColor);
             // console.log(result);
-            if (result[0] > 0.9) {
+            if (result[0] > 0.95) {
                 maxCount--;
                 this.results.push(generatedColor);
             } else {
