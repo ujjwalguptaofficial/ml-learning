@@ -7,7 +7,7 @@ const prod = merge(baseConfig, {
     mode: process.env.NODE_ENV || 'development',
     devtool: false,
     output: {
-        publicPath: '/',
+        publicPath: 'https://ujjwalguptaofficial.github.io/ml-learning/',
         filename: 'js/[name].[contenthash].bundle.js',
     },
     optimization: {
