@@ -18,8 +18,8 @@ dateCreated: May 10, 2023
 		<button class="button is-primary is-large" @click="train">I am done</button>
 	</div>
 	<div class="is-flex mt-4">
-		<div :for(color in results) :style="{background:color}" class="box ml-2">
-		</div>
+		<Color :for(color in results) :color="color">
+		</Color>
 	</div>
 </div>
 </html>
@@ -28,9 +28,11 @@ dateCreated: May 10, 2023
 import { children, Component, reactive } from "mahal";
 import { NeuralNetwork } from "brain.js";
 import ColorRow from "@/components/color_recommendation/color_row.mahal";
+import Color from "@/components/color_recommendation/color.mahal";
 
 @children({
     ColorRow,
+    Color,
 })
 export default class extends Component {
     colorRecom = new NeuralNetwork({
@@ -98,32 +100,29 @@ export default class extends Component {
             alert("Atleast 5 colors needed");
             return;
         }
-        // console.log("likedColors", likedColors);
-        // const datas = likedColors.map((likedColor) => {
-        //     const item = this.getRGBFromHash(likedColor);
-        //     return {
-        //         input: [item[0] / 255, item[1] / 255, item[2] / 255],
-        //         output: [1],
-        //     };
-        // });
         const state = this.colorRecom.train(likedColors, {
             iterations: 10000,
         });
         console.log("state", state);
+        if (state.error > 0.01) {
+            return alert(
+                "Could not run recommendation. Seems like there is no fixed pattern"
+            );
+        }
 
-        let maxCount = 6;
+        const output = new Set();
 
-        while (maxCount != 0) {
+        while (output.size < 6) {
             const generatedColor = this.generateNewColor();
             const result = this.run(generatedColor);
             // console.log(result);
             if (result[0] > 0.95) {
-                maxCount--;
-                this.results.push(generatedColor);
+                output.add(generatedColor);
             } else {
                 // console.log("found invalid color", generatedColor);
             }
         }
+        this.results = Array.from(output);
     }
 
     generateNewColor() {
