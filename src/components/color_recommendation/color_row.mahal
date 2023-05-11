@@ -22,9 +22,9 @@ export default class extends Component {
     @prop() colors;
 
     onInit() {
-        setTimeout(() => {
-            console.log(this.colors);
-        }, 1000);
+        // setTimeout(() => {
+        //     console.log(this.colors);
+        // }, 1000);
     }
 
     selectColor(color, selected) {
